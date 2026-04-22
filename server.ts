@@ -2,41 +2,41 @@ import "dotenv/config";
 import express from "express";
 import { createServer as createViteServer } from "vite";
 import path from "path";
-import apiRouter from "./server/api";
+import apiRouter from "./api.ts";
 import cors from "cors";
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = process.env.PORT || 3000;
 
   app.use(cors());
   app.use(express.json());
+
+  // Request Logger (move this BEFORE routes so it logs everything)
+  app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    next();
+  });
 
   // Health Check
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok", time: new Date().toISOString() });
   });
 
-  // Request Logger
-  app.use((req, res, next) => {
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-    next();
-  });
-
   // API routes
   app.use("/api", apiRouter);
 
   // Global Error Handler
-  app.use((err, req, res, next) => {
-    console.error('[SERVER ERROR]', err);
-    res.status(500).json({ 
-      error: 'Internal Server Error', 
-      message: err.message, 
-      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined 
+  app.use((err: any, req: any, res: any, next: any) => {
+    console.error("[SERVER ERROR]", err);
+    res.status(500).json({
+      error: "Internal Server Error",
+      message: err?.message || "Unknown error",
+      stack: process.env.NODE_ENV === "development" ? err?.stack : undefined,
     });
   });
 
-  // Vite middleware for development
+  // Vite (dev only)
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -44,10 +44,11 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    const distPath = path.join(process.cwd(), 'dist');
+    const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath));
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
+
+    app.get("*", (req, res) => {
+      res.sendFile(path.join(distPath, "index.html"));
     });
   }
 
