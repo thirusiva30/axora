@@ -1,0 +1,113 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile data",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "fleet_name": { "type": "string" },
+        "phone": { "type": "string" }
+      },
+      "required": ["uid", "email"]
+    },
+    "Truck": {
+      "title": "Truck",
+      "description": "Fleet unit telemetry and status",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "nickname": { "type": "string" },
+        "driver": { "type": "string" },
+        "status": { "type": "string" },
+        "lat": { "type": "number" },
+        "lng": { "type": "number" },
+        "speed": { "type": "number" },
+        "fuel": { "type": "number" },
+        "km_today": { "type": "number" },
+        "next_service": { "type": "string" },
+        "last_location": { "type": "string" },
+        "last_service": { "type": "string" }
+      },
+      "required": ["id", "status"]
+    },
+    "Compliance": {
+      "title": "Compliance",
+      "description": "Compliance documents for trucks",
+      "type": "object",
+      "properties": {
+        "truck_id": { "type": "string" },
+        "type": { "type": "string" },
+        "expiry": { "type": "string" },
+        "status": { "type": "string" }
+      },
+      "required": ["truck_id", "type", "expiry"]
+    },
+    "FuelLog": {
+      "title": "FuelLog",
+      "description": "Fuel consumption records",
+      "type": "object",
+      "properties": {
+        "truck_id": { "type": "string" },
+        "day": { "type": "string" },
+        "expected_litres": { "type": "number" },
+        "actual_litres": { "type": "number" },
+        "logged_at": { "type": "string" }
+      },
+      "required": ["truck_id", "day", "actual_litres"]
+    },
+    "Alert": {
+      "title": "Alert",
+      "description": "System alerts and notifications",
+      "type": "object",
+      "properties": {
+        "type": { "type": "string" },
+        "truck_id": { "type": "string" },
+        "message": { "type": "string" },
+        "resolved": { "type": "boolean" },
+        "created_at": { "type": "string" }
+      },
+      "required": ["type", "message"]
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "AI assistant chat history",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "role": { "type": "string" },
+        "content": { "type": "string" },
+        "created_at": { "type": "string" }
+      },
+      "required": ["uid", "role", "content"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": "User",
+      "description": "User profiles restricted to owner"
+    },
+    "/trucks/{truckId}": {
+      "schema": "Truck",
+      "description": "Global truck data"
+    },
+    "/compliance/{complianceId}": {
+      "schema": "Compliance",
+      "description": "Truck compliance records"
+    },
+    "/fuel_logs/{logId}": {
+      "schema": "FuelLog",
+      "description": "Fuel consumption history"
+    },
+    "/alerts/{alertId}": {
+      "schema": "Alert",
+      "description": "Active and resolved alerts"
+    },
+    "/chats/{chatId}": {
+      "schema": "ChatMessage",
+      "description": "User's chat history with Axora AI"
+    }
+  }
+}

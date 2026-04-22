@@ -1,0 +1,75 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Validation Blueprint for User
+    function isValidUser(data) {
+      return data.uid == request.auth.uid 
+        && data.email is string 
+        && data.email.size() <= 100
+        && (!('name' in data) || (data.name is string && data.name.size() <= 100))
+        && (!('fleet_name' in data) || (data.fleet_name is string && data.fleet_name.size() <= 100))
+        && (!('phone' in data) || (data.phone is string && data.phone.size() <= 20));
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if isOwner(userId) && isValidUser(request.resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'fleet_name', 'phone']);
+    }
+
+    // Trucks Collection
+    match /trucks/{truckId} {
+      allow read: if isVerified();
+      allow write: if isVerified(); // In a real app, restrict to admins/owners
+    }
+
+    // Compliance
+    match /compliance/{docId} {
+      allow read: if isVerified();
+      allow write: if isVerified();
+    }
+
+    // Fuel Logs
+    match /fuel_logs/{docId} {
+      allow read: if isVerified();
+      allow write: if isVerified();
+    }
+
+    // Alerts
+    match /alerts/{docId} {
+      allow read: if isVerified();
+      allow write: if isVerified();
+    }
+
+    // Chats
+    match /chats/{chatId} {
+      allow read: if isSignedIn() && resource.data.uid == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if false; // Chats are usually immutable or append-only
+    }
+  }
+}
